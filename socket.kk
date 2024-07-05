@@ -68,38 +68,50 @@ extern unsafe-send(fd : int32, ^msg : string): error<int32>
 
 extern unsafe-recv(fd : int32): exn string 
   c "kk_recv"
-  
-pub fun socket(domain : domain, socktype  : socket-type)   {
+
+// Create a Socket, returning its file descriptor 
+pub fun socket(domain : domain, socktype  : socket-type): exn socket   {
   unsafe-socket(int32(domain), int32(socktype)).untry.Socket
 }
 
-pub fun sockaddr(domain : domain, addr: address, port : int) 
-  val ptr = unsafe-sockaddr(
+// TODO: add error handling
+// Allocate a Sockaddr and return a pointer to it
+pub fun sockaddr(domain : domain, addr: address, port : int): sockaddr 
+  unsafe-sockaddr(
     int32(domain),
     int32(addr),
     int32(port))
-  Sockaddr(ptr)
+    .Sockaddr
 
-pub fun accept(Socket(fd) : socket)
-  unsafe-accept(fd).untry.Socket
+// Accept a connection, returning a new Socket(File Descriptor)
+pub fun accept(Socket(fd) : socket): exn socket
+  unsafe-accept(fd)
+    // `untry` so users can decide how they want to handle exns
+    .untry
+    .Socket
 
-pub fun bind(Socket(fd) : socket, Sockaddr(addr) : sockaddr)
-  if unsafe-bind(fd, addr) < 0.int32 
+// Bind socket to address/configuration described by Sockaddr
+pub fun bind(Socket(fd) : socket, Sockaddr(addr) : sockaddr): exn ()
+  if unsafe-bind(fd, addr) < int32(0) 
     then throw-exn(Exception("Cannot bind socket to address", SocketError))
 
-pub fun listen(Socket(fd) : socket, backlog : int)
+// Set socket to listen
+pub fun listen(Socket(fd) : socket, backlog : int): exn ()
   if unsafe-listen(fd, int32(backlog)) < int32(0)
     then throw-exn(Exception("Listening on socket failed", SocketError))
 
-pub fun send(Socket(fd) : socket, ^msg : string): exn int32
+// Send a string
+pub fun string/send(Socket(fd) : socket, ^msg : string): exn int
   match unsafe-send(fd, msg) 
-    Ok(written) -> written 
+    Ok(written) -> int(written)
     Error(Exception(message, info)) -> throw-exn(Exception("Send failed: " ++ message, info)) 
 
-pub fun recv(Socket(fd)) : exn string
+// Receive a string
+pub fun string/recv(Socket(fd)) : exn string
   unsafe-recv(fd)
 
-pub fun close(Socket(fd)) 
+// Close a socket
+pub fun close(Socket(fd)): exn ()
   if unsafe-close(fd) < int32(0) 
     then throw-exn(Exception("Cannot close socket!", SocketError))
 
