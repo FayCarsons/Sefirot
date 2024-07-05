@@ -1,16 +1,16 @@
 import socket 
 
-fun handle-client(client : socket)
+fun handle-client(client : socket): <pure, console> ()
   val msg = client.recv
-  println("RECEIVED: " ++ msg)
-  if msg.count == 0 
+  console/string/println("RECEIVED: " ++ msg)
+  if msg.count == 0 || msg.trim == "quit"
     then
       ()
     else
-      client.send(msg).ignore
+      client.send(msg.to-upper).ignore
       handle-client(client)
 
-fun server(sock : socket)
+fun server(sock : socket): <pure, console> ()
   while { True }
     val client = sock.accept()
     handle-client(client) 
@@ -19,7 +19,9 @@ fun server(sock : socket)
 
 
 pub fun main() 
-  println("Starting server :3")
+  test-string().console/string/println
+  test-char("STRING TO CBUF TEST")
+  console/string/println("Starting server :3")
   // Initialize a TCP socket
   val sock = socket(AF-Inet, Stream) 
   // Configure its address

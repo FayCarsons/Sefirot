@@ -3,11 +3,6 @@ import std/num/int32
 extend type exception-info
   SocketError
 
-fun error/map(err, f)
-  match err 
-    Ok(v) -> Ok(f(v))
-    Error(e) -> Error(e)
-
 type domain
   AF-Unix
   AF-Inet
@@ -53,6 +48,9 @@ extern import
 extern test-string(): string 
   c "kk_test_string"
 
+extern test-char(^s : string): exn ()
+  c "kk_test_char"
+
 extern unsafe-socket(domain : int32, socktype : int32): error<int32> 
   c "kk_socket"
 
@@ -63,15 +61,15 @@ extern unsafe-bind(fd : int32, addr : intptr_t): int32
   c "do_bind"
 
 extern unsafe-listen(fd : int32, backlog : int32): int32
-  c "do_listen"
+  c "listen"
 
 extern unsafe-accept(fd : int32): error<int32>
   c "kk_accept"
 
-extern unsafe-close(fd : int32): exn () 
-  c "do_close"
+extern unsafe-close(fd : int32): int32 
+  c "close"
 
-extern unsafe-send(fd : int32, msg : string): error<int32>
+extern unsafe-send(fd : int32, ^msg : string): error<int32>
   c "kk_send"
 
 extern unsafe-recv(fd : int32): exn string 
@@ -99,17 +97,19 @@ pub fun listen(Socket(fd) : socket, backlog : int)
   if unsafe-listen(fd, int32(backlog)) < int32(0)
     then throw-exn(Exception("Listening on socket failed", SocketError))
 
-pub fun send(Socket(fd) : socket, msg : string)
-  unsafe-send(fd, msg).untry
+pub fun send(Socket(fd) : socket, ^msg : string): exn int32
+  match unsafe-send(fd, msg) 
+    Ok(written) -> written 
+    Error(Exception(message, info)) -> throw-exn(Exception("Send failed: " ++ message, info)) 
 
 pub fun recv(Socket(fd)) : exn string
   unsafe-recv(fd)
 
 pub fun close(Socket(fd)) 
-  unsafe-close(fd)
+  if unsafe-close(fd) < int32(0) 
+    then throw-exn(Exception("Cannot close socket!", SocketError))
 
+// TODO:
 // fun connect
 // fun peername
 // fun shutdown
-// fun recv 
-// fun send

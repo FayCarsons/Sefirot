@@ -1,4 +1,4 @@
-# Rhizome
+# Sefirot
 
 A (currently WIP) Unix socket programming library for the Koka language.
 This library aims to provide simple composable utilities for building TCP 
