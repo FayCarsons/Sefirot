@@ -10,18 +10,19 @@
 
 #define DEBUG false
 
-kk_string_t kk_test_string(kk_context_t *ctx)
-{
-  const char *s = "Hewwo :3";
-  return kk_string_alloc_from_utf8(s, ctx);
-}
-
-void kk_test_char(kk_string_t s, kk_context_t *ctx)
+// String must be borrowed!
+const char *kk_string_to_buf(kk_string_t s, kk_context_t *ctx)
 {
   const kk_bytes_t bytes = s.bytes;
   kk_ssize_t len = kk_bytes_len_borrow(bytes, ctx);
-  const char *buf = kk_bytes_cbuf_borrow(bytes, &len, ctx);
-  printf("%s: successful!\n", buf);
+  return kk_bytes_cbuf_borrow(bytes, &len, ctx);
+
+#if DEBUG
+  /* ---- DEBUGGING ---- */
+  printf("STRING->BUF INVARIANTS: \n");
+  printf("BYTES IS NULL?: %s\n", buf == NULL ? "True" : "False");
+  printf("BUFFER[0] == 0?: %s\n", buf[0] == 0 ? "True" : "False");
+#endif
 }
 
 kk_std_core_exn__error kk_socket(int domain, int socktype, kk_context_t *ctx)
@@ -48,10 +49,19 @@ intptr_t new_sockaddr(int family, int addr_type, int port)
   return (intptr_t)addr;
 }
 
+// Connect and bind must be wrapped so that we can handle casting an intptr_t
+// to a sockaddr
+
 int do_bind(int sock, intptr_t addr_)
 {
   struct sockaddr *addr = (struct sockaddr *)addr_;
   return bind(sock, addr, sizeof(struct sockaddr));
+}
+
+int do_connect(int sock, intptr_t addr_)
+{
+  struct sockaddr *addr = (struct sockaddr *)addr_;
+  return connect(sock, addr, sizeof(*addr));
 }
 
 kk_std_core_exn__error kk_accept(int sock, kk_context_t *ctx)
@@ -69,40 +79,21 @@ kk_std_core_exn__error kk_accept(int sock, kk_context_t *ctx)
   }
 }
 
-int do_connect(int sock, intptr_t addr_)
-{
-  struct sockaddr* addr = (struct sockaddr *)addr_;
-  int res = connect(sock, addr, sizeof(*addr));
-  if (res < 0)
-  {
-    printf("Cannot connect!\n");
-    exit(1);
-  }
-  return res;
-}
 
+
+// String must be borrowed?
 kk_std_core_exn__error kk_send(int sock, kk_string_t str, kk_context_t *ctx)
 {
   const kk_bytes_t bytes = str.bytes;
   kk_ssize_t len = kk_bytes_len_borrow(bytes, ctx);
   const char *buf = kk_bytes_cbuf_borrow(bytes, &len, ctx);
 
-  #if DEBUG
-  {
-  /* ---- DEBUGGING ---- */
-  printf("KK_SEND INVARIANTS: \n");
-  printf("BYTES IS NULL?: %s\n", buf == NULL ? "True" : "False");
-  printf("BUFFER[0] == 0?: %s\n", buf[0] == 0 ? "True" : "False");
-  }
-  #endif 
-
   int sent = (int)send(sock, (void *)buf, len, 0);
 
-  #if DEBUG
+#if DEBUG
   printf("BYTES SENT: %d\n", sent);
-  #endif
+#endif
 
-  kk_string_drop(str, ctx);
   if (sent < 0)
   {
     printf("Error sending message!\n errno = %d", errno);
@@ -120,14 +111,12 @@ kk_string_t kk_recv(int sock, kk_context_t *ctx)
   char buffer[BUFFER_SIZE];
   ssize_t received = recv(sock, (void *)buffer, BUFFER_SIZE, 0);
 
-  #if DEBUG
-  {
-    printf("KK_RECEIVE INVARIANTS: \n");
-    printf("NUM BYTES RECEIVED: %d\n", received);
-    printf("BUFFER IS NULL? %s\n", buffer == NULL ? "True" : "False");
-    printf("BUFFER[0] == 0?: %s\n", buffer[0] == 0 ? "True" : "False");
-  }
-  #endif
+#if DEBUG
+  printf("KK_RECEIVE INVARIANTS: \n");
+  printf("NUM BYTES RECEIVED: %d\n", received);
+  printf("BUFFER IS NULL? %s\n", buffer == NULL ? "True" : "False");
+  printf("BUFFER[0] == 0?: %s\n", buffer[0] == 0 ? "True" : "False");
+#endif
 
   if (received < 0)
   {
@@ -135,9 +124,4 @@ kk_string_t kk_recv(int sock, kk_context_t *ctx)
   }
 
   return kk_string_alloc_from_utf8n(received, buffer, ctx);
-}
-
-int do_close(int fd)
-{
-   return close(fd);
 }

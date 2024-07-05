@@ -1,8 +1,7 @@
 import socket 
 
 fun handle-client(client : socket): <pure, console> ()
-  val msg = client.recv
-  console/string/println("RECEIVED: " ++ msg)
+  val msg : string = client.recv
   if msg.count == 0 || msg.trim == "quit"
     then
       ()
@@ -19,9 +18,7 @@ fun server(sock : socket): <pure, console> ()
 
 
 pub fun main() 
-  test-string().console/string/println
-  test-char("STRING TO CBUF TEST")
-  console/string/println("Starting server :3")
+  println("Starting server :3")
   // Initialize a TCP socket
   val sock = socket(AF-Inet, Stream) 
   // Configure its address

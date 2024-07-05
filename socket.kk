@@ -45,12 +45,6 @@ value struct sockaddr
 extern import 
   c file "socket.c"
 
-extern test-string(): string 
-  c "kk_test_string"
-
-extern test-char(^s : string): exn ()
-  c "kk_test_char"
-
 extern unsafe-socket(domain : int32, socktype : int32): error<int32> 
   c "kk_socket"
 
