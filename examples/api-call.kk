@@ -9,15 +9,20 @@ fun valid-response(res : string)
   status.trim == "HTTP/1.1 200 OK"
 
 pub fun main()
-  val sock = socket(AF-Inet, Stream)
-  // Httpbin.org, plain HTTP
-  val host-addr = client(AF-Inet, "3.227.135.8", 80)
+  val sock = socket(Ipv4, Stream)
+  // Close socket at end of fn, regardless of exceptions
+  with finally  
+    sock.close
+  
+  // Httpbin.org, plain HTTP, should always return 200
+  val host-addr = client(Ipv4, "3.227.135.8", 80)
   println("Connecting to host . . . ")
   sock.connect(host-addr)
   println("Sending request . . .")
   sock.send(req)
+
   val res = sock.recv()
   println("\nRESPONSE:\n" ++ res)
-  if valid-response(res)
-    then ()
-    else throw-exn(Exception("Incorrect response", SocketError))
+  if !valid-response(res)
+    then throw-exn(Exception("Incorrect response", SocketError))
+    else println("OK")

@@ -4,15 +4,15 @@ extend type exception-info
   SocketError
 
 type domain
-  AF-Unix
-  AF-Inet
-  AF-Inet6
+  Local
+  Ipv4
+  Ipv6
 
 fun domain/int32(d : domain)
   match d 
-    AF-Inet -> int32(2) 
-    AF-Inet6 -> int32(10) 
-    AF-Unix -> int32(1) 
+    Ipv4 -> int32(2) 
+    Ipv6 -> int32(10) 
+    Local -> int32(1) 
 
 type socket-type 
   Stream
@@ -101,7 +101,7 @@ pub fun socket(domain : domain, socktype  : socket-type): exn socket   {
 
 // TODO: add error handling
 // Allocate a Sockaddr for a host socket and return a pointer to it
-pub fun host(domain : domain, addr: address, port : int): exn sockaddr 
+pub fun host(^domain : domain, addr: address, port : int): exn sockaddr 
   val ptr : intptr_t = unsafe-host-addr(
     int32(domain),
     int32(addr),
@@ -153,8 +153,8 @@ pub fun string/recv(Socket(fd)) : exn string
   unsafe-string-recv(fd)
 
 pub fun shutdown(Socket(fd), mode = All)
-  unsafe-shutdown(fd, shutdown/int32(mode))
-
+  unsafe-shutdown(fd, shutdown/int32(mode)).untry
+  
 // Close a socket
 pub fun close(Socket(fd)): exn ()
   if unsafe-close(fd) < int32(0) 
