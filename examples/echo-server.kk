@@ -32,13 +32,13 @@ fun server(sock : socket): <pure, console> ()
   {}
 
 
-pub fun main() 
+pub fun main(): <pure, console> ()
   // Initialize a TCP socket
   val sock = socket(AF-Inet, Stream)
   // Close socket at end of main
   with finally { sock.close }
   // Create a Sockaddr object
-  val sockaddr = sockaddr(AF-Inet, Any,  3000 )
+  val sockaddr = host(AF-Inet, Any,  3000 )
   // Bind the socket to the addr
   sock.bind(sockaddr)
   // Set to listen, with a max of 10 connections
