@@ -1,45 +1,45 @@
 import socket
 // Higher level API
+// TODO: investigate linear effects for builder pattern
 
 val default-backlog = 10
 
-type mode 
-  TCP 
-  UDP
-  Raw
-
 value struct builder
-  domain : domain
-  backlog : int
-  socket : socket
-  addr : maybe<sockaddr>
+  domain : domain = Ipv4
+  backlog : int = 10
+  mode : mode = TCP
+  addr : maybe<sockaddr> = Nothing
 
 value struct host 
   socket : socket
   addr : sockaddr
 
-pub fun host/new(mode : mode = TCP, domain = Ipv4): exn builder
-  val stype = match mode 
-    TCP -> Stream 
-    UDP -> Datagram
-  val sock = socket(domain, stype)
-  Builder(domain, default-backlog, sock, Nothing)
+pub fun with-domain(Builder(_, backlog, mode, addr) : builder, domain : domain)
+  Builder(domain, backlog, mode, addr)
 
-pub fip fun with-addr(Builder(domain, backlog, sock, _), addr : sockaddr): builder 
-  Builder(domain, backlog, sock, Just(addr))
+pub fun with-backlog(Builder(domain, _, mode, addr) : builder, backlog : int)
+  Builder(domain, backlog, mode, addr)
+
+pub fun with-mode(Builder(domain, backlog, _, addr) : builder, mode : mode)
+  Builder(domain, backlog, mode, addr)
+
+pub fun with-addr(Builder(domain, backlog, mode, _), addr : sockaddr): builder 
+  Builder(domain, backlog, mode, Just(addr))
 
 // TODO: make this, and all builder fns, FIP
 pub fun host/with-port(builder : builder, port : int, addr-config = Loopback): exn builder
   val addr = socket/host(builder.domain, addr-config, port)
   builder.with-addr(addr)
 
-pub fun host/build(Builder(_, backlog, sock, addr)): exn host
+pub fun host/build(Builder(domain, backlog, mode, addr)): exn host
   match addr 
     Just(addr) ->
+      val stype = mode.to-stype
+      val sock = socket(domain, stype)
       sock.bind(addr)
       sock.listen(backlog)
       Host(sock, addr)
-    Nothing -> throw-exn(Exception("Cannot build host w/o setting port", SocketError))
+    Nothing -> throw-exn(Exception("Attempt to build Host with null port, use host/with-port(port_num) before building", SocketError))
 
 // Take a fn that accepts a client connection, and run it 
 // TODO: Stopping conditions, maybe cleanup

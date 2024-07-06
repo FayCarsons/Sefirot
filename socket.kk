@@ -20,6 +20,17 @@ type socket-type
   Raw
   SeqPacket
 
+// Higher level abstraction over protocols used by client and host APIs
+// TODO: solve naming conflicts, add raw and seqpacket
+type mode 
+  TCP 
+  UDP
+
+fun to-stype(mode : mode)
+  match mode 
+    TCP -> Stream 
+    UDP -> Datagram
+
 fun socket-type/int32(t : socket-type)  
   match t 
     Stream -> int32(1) 
@@ -101,7 +112,7 @@ pub fun socket(domain : domain, socktype  : socket-type): exn socket   {
 
 // TODO: add error handling
 // Allocate a Sockaddr for a host socket and return a pointer to it
-pub fun host(^domain : domain, addr: address, port : int): exn sockaddr 
+pub fun host(domain : domain, addr: address, port : int): exn sockaddr 
   val ptr : intptr_t = unsafe-host-addr(
     int32(domain),
     int32(addr),

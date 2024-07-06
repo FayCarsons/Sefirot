@@ -14,7 +14,7 @@ pub fun main()
   with finally  
     sock.close
   
-  // Httpbin.org, plain HTTP, should always return 200
+  // Httpbin.org, HTTP
   val host-addr = client(Ipv4, "3.227.135.8", 80)
   println("Connecting to host . . . ")
   sock.connect(host-addr)
