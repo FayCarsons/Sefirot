@@ -59,6 +59,7 @@ intptr_t kk_client_addr(const int domain, const kk_string_t ip, const int port, 
   host_addr->sin_port = htons(port);
 
   const char *ip_s = kk_string_to_buf(ip, ctx);
+  printf("IP is: %s\n", ip_s);
   int try = inet_pton(domain, ip_s, &host_addr->sin_addr);
   return (intptr_t)(try < 0 ? try : host_addr);
 }

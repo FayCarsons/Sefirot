@@ -123,6 +123,11 @@ pub fun accept(Socket(fd) : socket): exn socket
     .untry
     .Socket
 
+pub fun connect(Socket(fd) : socket, Sockaddr(addr)): exn () 
+  if int(unsafe-connect(fd,addr)) < 0
+    then throw-exn(Exception("Cannot connect to host", SocketError))
+    else ()
+
 pub fun peername(Socket(client)): exn string 
   unsafe-peername(client)
 
