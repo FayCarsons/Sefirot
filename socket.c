@@ -136,3 +136,11 @@ kk_string_t kk_string_recv(const int sock, kk_context_t *ctx)
 
   return kk_string_alloc_from_utf8n(received, buffer, ctx);
 }
+
+kk_std_core_exn__error kk_shutdown(int fd, int how, kk_context_t *ctx) 
+{
+  if (shutdown(fd, how) == -1)
+    return kk_error_from_errno(errno, ctx);
+  else 
+    return kk_error_ok(kk_unit_box(kk_Unit), ctx);
+}

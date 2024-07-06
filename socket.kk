@@ -36,6 +36,17 @@ fun address/int32(a : address)
     Any -> int32(0x00000000)
     Loopback -> int32(0x7F000001)
 
+type shutdown
+  Read 
+  Write 
+  All
+
+pub fun shutdown/int32(s : shutdown)
+  match s 
+    Read -> int32(0)
+    Write -> int32(1)
+    All -> int32(2)
+
 value struct socket 
   inner : int32
 
@@ -74,6 +85,9 @@ extern unsafe-string-recv(fd : int32): exn string
 
 extern unsafe-connect(fd : int32, addr : intptr_t): int32 
   c "do_connect"
+
+extern unsafe-shutdown(fd : int32, mode : int32): error<()>
+  c "kk_shutdown"
 
 // Create a Socket, returning its file descriptor 
 pub fun socket(domain : domain, socktype  : socket-type): exn socket   {
@@ -127,12 +141,14 @@ pub fun string/send(Socket(fd) : socket, ^msg : string): exn int
 pub fun string/recv(Socket(fd)) : exn string
   unsafe-string-recv(fd)
 
+pub fun shutdown(Socket(fd), mode = All)
+  unsafe-shutdown(fd, shutdown/int32(mode))
+
 // Close a socket
 pub fun close(Socket(fd)): exn ()
   if unsafe-close(fd) < int32(0) 
     then throw-exn(Exception("Cannot close socket!", SocketError))
 
 // TODO:
-// fun connect
 // fun peername
 // fun shutdown
