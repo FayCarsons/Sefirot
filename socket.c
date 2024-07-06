@@ -43,7 +43,8 @@ kk_std_core_exn__error kk_socket(const int domain, const int socktype, kk_contex
 intptr_t host_addr(const int domain, const int addr_type, const int port)
 {
   struct sockaddr_in *addr = malloc(sizeof(struct sockaddr_in));
-  if (addr == NULL) return (intptr_t)-1;
+  if (addr == NULL)
+    return (intptr_t)-1;
 
   addr->sin_family = domain;
   addr->sin_addr.s_addr = htonl(addr_type);
@@ -116,7 +117,8 @@ kk_std_core_exn__error kk_string_send(const int sock, const kk_string_t str, kk_
   }
 }
 
-#define BUFFER_SIZE 1024 // Static buffer size for testing
+// TODO: decide what size this buffer should be, how to handle etc
+#define BUFFER_SIZE 1024 
 kk_string_t kk_string_recv(const int sock, kk_context_t *ctx)
 {
   char buffer[BUFFER_SIZE];
@@ -129,18 +131,35 @@ kk_string_t kk_string_recv(const int sock, kk_context_t *ctx)
   printf("BUFFER[0] == 0?: %s\n", buffer[0] == 0 ? "True" : "False");
 #endif
 
+// TODO: figure out how to pass errors to koka :/
+/*
   if (received < 0)
   {
-    kk_error_from_errno(errno, ctx);
+    return kk_error_from_errno(errno, ctx);
   }
-
+*/
   return kk_string_alloc_from_utf8n(received, buffer, ctx);
 }
 
-kk_std_core_exn__error kk_shutdown(int fd, int how, kk_context_t *ctx) 
+kk_std_core_exn__error kk_shutdown(int fd, int how, kk_context_t *ctx)
 {
   if (shutdown(fd, how) == -1)
     return kk_error_from_errno(errno, ctx);
-  else 
+  else
     return kk_error_ok(kk_unit_box(kk_Unit), ctx);
+}
+
+kk_string_t kk_peername(const int client, kk_context_t *ctx)
+{
+  struct sockaddr_in peer_addr;
+  socklen_t addr_len = sizeof(peer_addr);
+  char addr_str[INET_ADDRSTRLEN];
+
+  if (getpeername(client, (struct sockaddr *)&peer_addr, &addr_len) == -1 ||
+      inet_ntop(AF_INET, &(peer_addr.sin_addr), addr_str, sizeof(addr_str)) == NULL)
+    // TODO: figure out how to pass errors to koka :/
+    // return kk_error_from_errno(errno, ctx)
+    return kk_string_alloc_from_utf8n(5,"Error", ctx); 
+  else
+    return kk_string_alloc_from_utf8(addr_str, ctx);
 }

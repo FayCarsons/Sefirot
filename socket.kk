@@ -83,6 +83,9 @@ extern unsafe-string-send(fd : int32, ^msg : string): error<int32>
 extern unsafe-string-recv(fd : int32): exn string 
   c "kk_string_recv"
 
+extern unsafe-peername(fd : int32): exn string
+  c "kk_peername"
+
 extern unsafe-connect(fd : int32, addr : intptr_t): int32 
   c "do_connect"
 
@@ -119,6 +122,9 @@ pub fun accept(Socket(fd) : socket): exn socket
     // `untry` so user can decide how they want to handle exns
     .untry
     .Socket
+
+pub fun peername(Socket(client)): exn string 
+  unsafe-peername(client)
 
 // Bind socket to address/configuration described by Sockaddr
 pub fun bind(Socket(fd) : socket, Sockaddr(addr) : sockaddr): exn ()
