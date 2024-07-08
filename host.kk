@@ -27,11 +27,11 @@ pub fun with-addr(Builder(domain, backlog, mode, _), addr : sockaddr): builder
   Builder(domain, backlog, mode, Just(addr))
 
 // TODO: make this, and all builder fns, FIP
-pub fun host/with-port(builder : builder, port : int, addr-config = Loopback): exn builder
+pub fun with-port(builder : builder, port : int, addr-config = Loopback): exn builder
   val addr = socket/host(builder.domain, addr-config, port)
   builder.with-addr(addr)
 
-pub fun host/build(Builder(domain, backlog, mode, addr)): exn host
+pub fun build(Builder(domain, backlog, mode, addr)): exn host
   match addr 
     Just(addr) ->
       val stype = mode.to-stype
@@ -39,11 +39,15 @@ pub fun host/build(Builder(domain, backlog, mode, addr)): exn host
       sock.bind(addr)
       sock.listen(backlog)
       Host(sock, addr)
-    Nothing -> throw-exn(Exception("Attempt to build Host with null port, use host/with-port(port_num) before building", SocketError))
+    Nothing -> throw-exn(Exception(
+      "Attempt to build Host with null port, use host/with-port(port_num) before building", 
+      SocketError))
 
 // Take a fn that accepts a client connection, and run it 
+// Currently runs forever w/ no handling of effects
 // TODO: Stopping conditions, maybe cleanup
 pub fun host/run(Host(sock, _), action : socket -> <div,exn|e> ()): <div,exn|e> ()
+  with finally { sock.close }
   while { True }
     val client = sock.accept
     action(client)
