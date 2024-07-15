@@ -43,13 +43,16 @@ pub fun build(Builder(domain, backlog, mode, addr)): exn host
       "Attempt to build Host with null port, use host/with-port(port_num) before building", 
       SocketError))
 
-// Take a fn that accepts a client connection, and run it 
-// Currently runs forever w/ no handling of effects
-// TODO: Stopping conditions, maybe cleanup
-pub fun host/run(Host(sock, _), action : socket -> <div,exn|e> ()): <div,exn|e> ()
+effect server 
+  ctl stop(): ()
+
+pub fun host/run(Host(sock, _), action : socket -> <exn, server> ())
   with finally { sock.close }
+  with handler 
+    ctl stop() 
+      println("Host closed!")
+      return(())
   while { True }
     val client = sock.accept
     action(client)
-    client.close()
-    
+    client.close() 

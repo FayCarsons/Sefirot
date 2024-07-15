@@ -2,7 +2,7 @@ import socket
 
 // Read a message from the client connection, print it, and echo it uppercased
 fun handle-client(client : socket): <pure, console> ()
-  val msg : string = client.recv
+  val msg = client.recv
   val len = msg.count
   if len == 0 || msg.trim == "quit"
     then

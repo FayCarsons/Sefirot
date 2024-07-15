@@ -32,6 +32,9 @@ pub fun build(Builder(domain, mode, sockaddr) : client/builder): exn client
         "Attempt to build Client with null address, use client.with-address(ip, port) to set address before building", 
         SocketError))
 
+pub fun client/send(Client(sock), msg : string): exn int
+  sock.send(msg)
+
 pub fun client/request(Client(sock), req : string): exn string
   sock.send(req)
   sock.recv()
