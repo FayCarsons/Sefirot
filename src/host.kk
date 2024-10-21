@@ -1,13 +1,13 @@
-import socket
+import src/bindings
+import src/model
 // Higher level API
-// TODO: investigate linear effects for builder pattern
 
 val default-backlog = 10
 
 value struct builder
   domain : domain = Ipv4
   backlog : int = 10
-  mode : mode = TCP
+  protocol : protocol = TCP
   addr : maybe<sockaddr> = Nothing
 
 value struct host 
@@ -20,15 +20,16 @@ pub fun with-domain(Builder(_, backlog, mode, addr) : builder, domain : domain)
 pub fun with-backlog(Builder(domain, _, mode, addr) : builder, backlog : int)
   Builder(domain, backlog, mode, addr)
 
-pub fun with-mode(Builder(domain, backlog, _, addr) : builder, mode : mode)
-  Builder(domain, backlog, mode, addr)
+pub fun with-mode(Builder(domain, backlog, _,
+addr) : builder, protocol : protocol)
+  Builder(domain, backlog, protocol, addr)
 
 pub fun with-addr(Builder(domain, backlog, mode, _), addr : sockaddr): builder 
   Builder(domain, backlog, mode, Just(addr))
 
 // TODO: make this, and all builder fns, FIP
 pub fun with-port(builder : builder, port : int, addr-config = Loopback): exn builder
-  val addr = socket/host(builder.domain, addr-config, port)
+  val addr = bindings/host(builder.domain, addr-config, port)
   builder.with-addr(addr)
 
 pub fun build(Builder(domain, backlog, mode, addr)): exn host

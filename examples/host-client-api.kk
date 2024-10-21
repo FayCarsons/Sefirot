@@ -13,7 +13,7 @@ fun loop(host : host)
       val msg = client.recv
       if msg.trim == "quit" 
       then stop()
-      else client.socket/send(msg.to-upper).ignore
+      else client.send(msg.to-upper).ignore
   )
 
 // Client - make a single request

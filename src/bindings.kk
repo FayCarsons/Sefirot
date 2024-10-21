@@ -1,68 +1,5 @@
-import std/num/int32 
-
-extend type exception-info
-  SocketError
-
-type domain
-  Local
-  Ipv4
-  Ipv6
-
-fun domain/int32(d : domain)
-  match d 
-    Ipv4 -> int32(2) 
-    Ipv6 -> int32(10) 
-    Local -> int32(1) 
-
-type socket-type 
-  Stream
-  Datagram
-  Raw
-  SeqPacket
-
-// Higher level abstraction over protocols used by client and host APIs
-// TODO: solve naming conflicts, add raw and seqpacket
-type mode 
-  TCP 
-  UDP
-
-fun to-stype(mode : mode)
-  match mode 
-    TCP -> Stream 
-    UDP -> Datagram
-
-fun socket-type/int32(t : socket-type)  
-  match t 
-    Stream -> int32(1) 
-    Datagram -> int32(2)
-    Raw -> int32(3)
-    SeqPacket -> int32(5)
-
-type address 
-  Any
-  Loopback
-
-fun address/int32(a : address) 
-  match a 
-    Any -> int32(0x00000000)
-    Loopback -> int32(0x7F000001)
-
-type shutdown
-  Read 
-  Write 
-  All
-
-pub fun shutdown/int32(s : shutdown)
-  match s 
-    Read -> int32(0)
-    Write -> int32(1)
-    All -> int32(2)
-
-value struct socket 
-  inner : int32
-
-value struct sockaddr
-  inner : intptr_t
+import src/model
+import std/num/int32
 
 extern import 
   c file "socket.c"
@@ -110,13 +47,13 @@ pub fun socket(domain : domain, socktype  : socket-type): exn socket   {
     .Socket
 }
 
-// TODO: add error handling
 // Allocate a Sockaddr for a host socket and return a pointer to it
 pub fun host(domain : domain, addr: address, port : int): exn sockaddr 
   val ptr : intptr_t = unsafe-host-addr(
-    int32(domain),
-    int32(addr),
-    int32(port))
+      int32(domain),
+      int32(addr),
+      int32(port)
+    )
   if int(ptr) < 0 
     then throw-exn(Exception("Error instantiating host sockaddr", SocketError))
     else Sockaddr(ptr)
@@ -127,7 +64,7 @@ pub fun client(domain : domain, ip : string, port : int): exn sockaddr
     then throw-exn(Exception("Error instantiating client sockaddr", SocketError))
     else Sockaddr(ptr)
 
-// Accept a connection, returning a new Socket(File Descriptor)
+// Accept a connection, returning a new file descriptor
 pub fun accept(Socket(fd) : socket): exn socket
   unsafe-accept(fd)
     // `untry` so user can decide how they want to handle exns
@@ -170,7 +107,3 @@ pub fun shutdown(Socket(fd), mode = All)
 pub fun close(Socket(fd)): exn ()
   if unsafe-close(fd) < int32(0) 
     then throw-exn(Exception("Cannot close socket!", SocketError))
-
-// TODO:
-// fun peername
-// fun shutdown

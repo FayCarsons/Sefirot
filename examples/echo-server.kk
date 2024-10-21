@@ -1,4 +1,4 @@
-import socket 
+import sefirot 
 
 // Read a message from the client connection, print it, and echo it uppercased
 fun handle-client(client : socket): <pure, console> ()

@@ -1,4 +1,5 @@
-import socket 
+import src/bindings
+import src/model
 
 // Very simple outline
 // TODO: 'server' effect that handles stopping/continuing a server
@@ -8,14 +9,14 @@ value struct client
 
 value struct builder
   domain : domain = Ipv4
-  mode : mode = TCP
+  protocol : protocol = TCP
   sockaddr : maybe<sockaddr> = Nothing
 
 pub fun with-domain(Builder(_, mode, sockaddr), domain : domain): builder
   Builder(domain, mode, sockaddr)
 
-pub fun with-mode(Builder(domain, _, sockaddr), mode : mode): builder
-  Builder(domain, mode, sockaddr)
+pub fun with-mode(Builder(domain, _, sockaddr), protocol : protocol): builder
+  Builder(domain, protocol, sockaddr)
 
 pub fun with-address(Builder(domain, mode, _), ip : string, port : int)
   val sockaddr-ptr = client(domain,ip, port)
@@ -40,7 +41,7 @@ pub fun client/request(Client(sock), req : string): exn string
   sock.recv()
 
 pub fun client/close(Client(sock))
-  sock.socket/close
+  sock.bindings/close
 
 pub fun client/oneshot(client, req : string): <exn|e> string
   with finally { client.client/close }
